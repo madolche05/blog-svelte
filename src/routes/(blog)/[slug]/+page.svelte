@@ -1,9 +1,32 @@
 <script lang="ts">
-    import { page } from '$app/stores';
-    
-    // In a real app, we would fetch data in +page.server.ts based on params.slug
-    // For now, we just display the slug
-    $: slug = $page.params.slug;
+    import type { PageData } from './$types';
+
+    interface Post {
+        title: string;
+        content: string | null;
+        published_at: string | null;
+        created_at: string;
+        featured_image: string | null;
+        author: {
+            full_name: string | null;
+            avatar_url: string | null;
+            username: string | null;
+        } | null;
+    }
+
+    export let data: PageData;
+
+    // Cast data.post to our defined interface
+    $: post = data.post as unknown as Post;
+
+    function formatDate(dateString: string | null) {
+        if (!dateString) return '';
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    }
 </script>
 
 <div class="max-w-3xl mx-auto py-8">
@@ -13,19 +36,36 @@
         </a>
     </div>
 
-    <article class="prose lg:prose-xl">
-        <h1>Blog Post: {slug}</h1>
-        <p class="text-base-content/70">Published on Dec 17, 2025</p>
-        
-        <div class="divider"></div>
-        
-        <p>
-            This is a placeholder content for the blog post <strong>{slug}</strong>.
-            In a real application, this content would be fetched from a database or CMS.
-        </p>
-        <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
-            Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-        </p>
-    </article>
+    {#if post}
+        <article class="prose lg:prose-xl">
+            <h1>{post.title}</h1>
+            <div class="flex items-center gap-4 text-sm text-base-content/70 not-prose mb-8">
+                {#if post.author}
+                    <div class="flex items-center gap-2">
+                        {#if post.author.avatar_url}
+                            <img src={post.author.avatar_url} alt={post.author.full_name || ''} class="w-8 h-8 rounded-full" />
+                        {/if}
+                        <span>{post.author.full_name || post.author.username}</span>
+                    </div>
+                    <span>•</span>
+                {/if}
+                <time>{formatDate(post.published_at || post.created_at)}</time>
+            </div>
+            
+            {#if post.featured_image}
+                <img src={post.featured_image} alt={post.title} class="w-full h-auto rounded-xl shadow-lg mb-8" />
+            {/if}
+
+            <div class="divider"></div>
+            
+            <!-- 
+                Note: Content is stored as Markdown in the database. 
+                Since we don't have a markdown parser installed yet, we display it as pre-wrapped text.
+                To render Markdown, install 'marked' or 'svelte-markdown'.
+            -->
+            <div class="whitespace-pre-wrap font-sans text-base-content leading-relaxed">
+                {post.content || ''}
+            </div>
+        </article>
+    {/if}
 </div>

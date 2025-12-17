@@ -28,6 +28,6 @@ export const actions: Actions = {
             return fail(400, { email, error: errorMessage });
         }
 
-        throw redirect(303, '/dashboard');
+        throw redirect(303, '/admin');
     }
 };

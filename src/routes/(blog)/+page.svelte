@@ -1,28 +1,31 @@
 <script lang="ts">
-    // Mock data for blog posts
-    const posts = [
-        {
-            id: 1,
-            title: "Welcome to My New Blog",
-            excerpt: "This is the start of something new. We are exploring SvelteKit and DaisyUI.",
-            date: "Dec 17, 2025",
-            slug: "welcome-to-my-new-blog"
-        },
-        {
-            id: 2,
-            title: "Separating Admin and Public Routes",
-            excerpt: "How to use Route Groups in SvelteKit to organize your application structure effectively.",
-            date: "Dec 16, 2025",
-            slug: "separating-admin-and-public-routes"
-        },
-        {
-            id: 3,
-            title: "Why SvelteKit is Awesome",
-            excerpt: "A deep dive into the features that make SvelteKit a great choice for modern web development.",
-            date: "Dec 15, 2025",
-            slug: "why-sveltekit-is-awesome"
-        }
-    ];
+    import type { PageData } from './$types';
+
+    interface Post {
+        title: string;
+        slug: string;
+        excerpt: string | null;
+        published_at: string | null;
+        created_at: string;
+        featured_image: string | null;
+        author: {
+            full_name: string | null;
+        } | null;
+    }
+
+    export let data: PageData;
+
+    // Cast data.posts to our defined interface to fix Supabase type inference issues
+    $: posts = data.posts as unknown as Post[];
+
+    function formatDate(dateString: string | null) {
+        if (!dateString) return '';
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
 </script>
 
 <div class="space-y-12">
@@ -39,17 +42,31 @@
     <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
         {#each posts as post}
             <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow border border-base-200">
+                {#if post.featured_image}
+                    <figure>
+                        <img src={post.featured_image} alt={post.title} class="w-full h-48 object-cover" />
+                    </figure>
+                {/if}
                 <div class="card-body">
-                    <span class="text-xs text-base-content/60">{post.date}</span>
+                    <div class="flex items-center gap-2 text-xs text-base-content/60 mb-2">
+                        <span>{formatDate(post.published_at || post.created_at)}</span>
+                        <span>•</span>
+                        <span>{post.author?.full_name || 'Unknown'}</span>
+                    </div>
                     <h2 class="card-title text-2xl mb-2 hover:text-primary cursor-pointer">
                         <a href="/{post.slug}">{post.title}</a>
                     </h2>
-                    <p class="text-base-content/80">{post.excerpt}</p>
+                    <p class="text-base-content/80">{post.excerpt || 'No excerpt available.'}</p>
                     <div class="card-actions justify-end mt-4">
                         <a href="/{post.slug}" class="btn btn-ghost btn-sm">Read More &rarr;</a>
                     </div>
                 </div>
             </div>
         {/each}
+        {#if posts.length === 0}
+            <div class="col-span-full text-center py-12 text-base-content/60">
+                <p>No posts found.</p>
+            </div>
+        {/if}
     </div>
 </div>
