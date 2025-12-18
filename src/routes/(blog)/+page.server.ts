@@ -7,8 +7,7 @@ export const load: PageServerLoad = async ({ locals: { supabase } }) => {
             `
             title,
             slug,
-            excerpt,
-            content,
+            excerpt: auto_excerpt,
             published_at,
             created_at,
             featured_image,
@@ -23,27 +22,17 @@ export const load: PageServerLoad = async ({ locals: { supabase } }) => {
         return { posts: [] };
     }
 
-    // Process posts to ensure excerpt exists
-    const posts = postsData.map(post => {
-        if (!post.excerpt && post.content) {
-            // Simple markdown stripping (remove #, *, etc) and truncation
-            const plainText = post.content
-                .replace(/[#*`\[\]()]/g, '') // Remove common markdown chars
-                .replace(/\n+/g, ' ')        // Replace newlines with spaces
-                .trim();
-            
-            post.excerpt = plainText.length > 150 
-                ? plainText.substring(0, 150) + '...' 
-                : plainText;
-        }
-        // Remove content from the list view payload to save bandwidth/memory if needed
-        // (optional, but good practice if content is large)
-        const { content, ...rest } = post; 
-        // We actually return 'rest' but we need to assign the new excerpt to it.
-        // Since 'post' is a reference, modifying it modifies the object.
-        // But we are destructuring 'content' out.
-        return { ...rest, excerpt: post.excerpt };
-    });
+    // Cast the result to the expected type since we know 'excerpt' is returned by the DB function
+    // and we removed the JS processing.
+    const posts = postsData as unknown as Array<{
+        title: string;
+        slug: string;
+        excerpt: string;
+        published_at: string | null;
+        created_at: string;
+        featured_image: string | null;
+        author: { full_name: string | null } | null;
+    }>;
 
     return { posts };
 };
