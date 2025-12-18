@@ -42,7 +42,7 @@
                             <div class="text-xs text-base-content/60">/{post.slug}</div>
                         </td>
                         <td>
-                            {post.author?.full_name || 'Unknown'}
+                            {(post.author as any)?.full_name || (post.author as any)?.[0]?.full_name || 'Unknown'}
                         </td>
                         <td>
                             {#if post.status === 'published'}

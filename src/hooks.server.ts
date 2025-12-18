@@ -31,28 +31,30 @@ const supabase: Handle = async ({ event, resolve }) => {
       return { session: null, user: null }
     }
 
-    // Check if profile exists, if not, create one
-    const { data: profile, error: profileError } = await event.locals.supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .single();
-
-    if (profileError && profileError.code === 'PGRST116') { // No rows found
-        // Create a basic profile for the new user
-        const { error: insertError } = await event.locals.supabase
+    if (user) {
+        // Check if profile exists, if not, create one
+        const { data: profile, error: profileError } = await event.locals.supabase
             .from('profiles')
-            .insert({ id: user.id, full_name: user.email, username: user.email?.split('@')[0] }); // Basic default values
+            .select('id')
+            .eq('id', user.id)
+            .single();
 
-        if (insertError) {
-            console.error('Error creating profile for user:', insertError);
-            // Decide how to handle this error:
-            // 1. Log and continue (user might still function but without a proper profile)
-            // 2. Redirect to an error page or prevent further access (more strict)
-            // For now, we'll just log the error.
+        if (profileError && profileError.code === 'PGRST116') { // No rows found
+            // Create a basic profile for the new user
+            const { error: insertError } = await event.locals.supabase
+                .from('profiles')
+                .insert({ id: user.id, full_name: user.email, username: user.email?.split('@')[0] }); // Basic default values
+
+            if (insertError) {
+                console.error('Error creating profile for user:', insertError);
+                // Decide how to handle this error:
+                // 1. Log and continue (user might still function but without a proper profile)
+                // 2. Redirect to an error page or prevent further access (more strict)
+                // For now, we'll just log the error.
+            }
+        } else if (profileError) {
+            console.error('Error fetching profile:', profileError);
         }
-    } else if (profileError) {
-        console.error('Error fetching profile:', profileError);
     }
 
     return { session, user }
